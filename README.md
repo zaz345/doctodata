@@ -74,3 +74,27 @@ set LLM_API_KEY=...
 | `LLM_MODEL`        | glm-4-flash  | 文本模型                        |
 | `LLM_VISION_MODEL` | glm-4v-flash | 视觉模型                        |
 | `LLM_MODE`         | 正常           | 设为 `mock` 返回固定假数据，仅用于验证接口链路 |
+
+## 改了代码怎么上线
+
+线上地址：`https://doctodata.onrender.com`（Render Blueprint，free plan，Singapore）。  
+Render 监听 GitHub 仓库的 `main` 分支，**push 上去会自动重新部署**，不用点任何按钮。
+
+**本机 `github.com:443`（HTTPS）不通，必须走 SSH**，仓库已配好：
+
+```cmd
+cd /d E:\WorkBuddy_WorkSpace\remoteEarn\DocToData
+git add -A
+git commit -m "说明这次改了什么"
+set GIT_SSH_COMMAND=ssh -i C:/Users/Admin1/.ssh/id_ed25519 -o IdentitiesOnly=yes
+git push origin main
+```
+
+> 不要改回 HTTPS 远程地址。SSH 走 `github.com:22` 是通的，HTTPS 的 443 被拦。  
+> 推完等 1–2 分钟，Render 自动重建；改前端后可用 `curl -s https://doctodata.onrender.com/ui/index.html | grep 关键词` 确认新版已生效。
+
+## 免费层的两个注意点
+
+- **15 分钟无人访问会自动休眠**，下次访问有 30–50 秒冷启动。演示/录屏前先打开一次预热。
+- **不要删除或暂停 Render 上的服务**。免费层不计时、空转到点自动睡，**不会产生费用**；但删除会让域名失效（交付物第一项就没了），暂停会让地址变成「服务已暂停」页面。
+
