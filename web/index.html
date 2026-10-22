@@ -90,7 +90,8 @@
       <div class="mx-auto w-11 h-11 rounded-full border-[3px] border-slate-200 border-t-blue-600 animate-spin"></div>
       <p class="mt-5 font-medium">Reading the document…</p>
       <p class="text-[13px] text-slate-500 mt-1" id="loading-name">invoice_01.pdf</p>
-      <p class="text-[12px] text-slate-400 mt-4">Extracting fields with an LLM — usually 3–9 seconds.</p>
+      <p class="text-[12px] text-slate-400 mt-4">Extracting fields with an LLM — usually 3–9 seconds.
+        <span id="loading-timer" class="tabular-nums text-slate-500"></span></p>
     </div>
   </section>
 
@@ -114,7 +115,7 @@
       <!-- preview -->
       <div class="card overflow-hidden">
         <div class="px-4 py-2.5 border-b border-slate-200 text-[13px] font-medium text-slate-600">Original document</div>
-        <div id="preview" class="bg-slate-100 h-[520px] overflow-auto flex items-start justify-center"></div>
+        <div id="preview" class="bg-slate-100 h-[380px] md:h-[520px] overflow-auto flex items-start justify-center"></div>
       </div>
       <!-- editable fields -->
       <div class="card overflow-hidden">
@@ -204,11 +205,30 @@ async function loadSamples() {
 }
 
 /* ---------- extraction ---------- */
+function startTimer() {
+  const el = $("loading-timer");
+  const t0 = Date.now();
+  el.textContent = "0.0s";
+  return setInterval(() => {
+    el.textContent = ((Date.now() - t0) / 1000).toFixed(1) + "s";
+  }, 100);
+}
+
 async function postExtract(formData, label) {
   $("loading-name").textContent = label;
   show("view-loading");
+  const timer = startTimer();
   const t0 = Date.now();
-  const res = await fetch("/extract", { method: "POST", body: formData });
+  let res;
+  try {
+    res = await fetch("/extract", { method: "POST", body: formData });
+  } catch (e) {
+    clearInterval(timer);
+    alert("Network error: " + (e.message || e));
+    show("view-upload");
+    return;
+  }
+  clearInterval(timer);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: "Request failed" }));
     alert("Error: " + (err.detail || res.status));
@@ -258,8 +278,8 @@ function renderResult(doc) {
   const isImg = (doc.mime || "").startsWith("image/") || /\.(png|jpe?g|webp)$/i.test(doc.filename || "");
   const isPdf = doc.mime === "application/pdf" || /\.pdf$/i.test(doc.filename || "");
   const pv = $("preview");
-  if (isImg) pv.innerHTML = `<img src="/files/${doc.doc_id}" class="w-full">`;
-  else if (isPdf) pv.innerHTML = `<iframe src="/files/${doc.doc_id}#toolbar=0" class="w-full h-[520px] border-0"></iframe>`;
+  if (isImg) pv.innerHTML = `<img src="/files/${doc.doc_id}" class="w-full max-h-[380px] md:max-h-none object-contain">`;
+  else if (isPdf) pv.innerHTML = `<iframe src="/files/${doc.doc_id}#toolbar=0&view=FitH" class="w-full h-[380px] md:h-[520px] border-0"></iframe>`;
   else pv.innerHTML = `<div class="p-8 text-center text-[13px] text-slate-500">Fetched from a link — no file preview available.</div>`;
 
   // fields
