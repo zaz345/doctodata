@@ -279,7 +279,7 @@ function renderResult(doc) {
   const isPdf = doc.mime === "application/pdf" || /\.pdf$/i.test(doc.filename || "");
   const pv = $("preview");
   if (isImg) pv.innerHTML = `<img src="/files/${doc.doc_id}" class="w-full max-h-[380px] md:max-h-none object-contain">`;
-  else if (isPdf) pv.innerHTML = `<iframe src="/files/${doc.doc_id}#toolbar=0&view=FitH" class="w-full h-[380px] md:h-[520px] border-0"></iframe>`;
+  else if (isPdf) pv.innerHTML = `<iframe src="/files/${doc.doc_id}#toolbar=0&view=Fit" class="w-full h-[380px] md:h-[520px] border-0"></iframe>`;
   else pv.innerHTML = `<div class="p-8 text-center text-[13px] text-slate-500">Fetched from a link — no file preview available.</div>`;
 
   // fields
