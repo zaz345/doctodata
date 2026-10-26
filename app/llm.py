@@ -21,8 +21,8 @@ VISION_MODEL = os.getenv("LLM_VISION_MODEL", "glm-4v-flash")
 
 SYSTEM_PROMPT = (
     "You are a document field extraction engine. "
-    "Given the text (or image) of an invoice or a real-estate listing, "
-    "extract the fields and reply with a single JSON object and nothing else. "
+    "Given the text of a document, extract its key fields and reply with a "
+    "single JSON object and nothing else. "
     "Use null for fields that are not present. Do not invent values."
 )
 
@@ -108,12 +108,16 @@ def extract_fields_from_text(text: str, hint: str = "") -> dict:
         schema_line = f"Target schema (JSON keys and meaning): {json.dumps(field_spec, ensure_ascii=False)}"
     else:
         schema_line = (
-            "The document is either an invoice or a real-estate listing. "
-            "First decide which one it is, set doc_type to 'invoice' or 'listing', "
-            f"then extract fields using the matching schema.\n"
+            "The document is an invoice, a real-estate listing, or something else.\n"
+            "- If it is an invoice: set doc_type to 'invoice' and use the invoice schema.\n"
+            "- If it is a real-estate listing: set doc_type to 'listing' and use the listing schema.\n"
+            "- Otherwise: set doc_type to 'generic' and pick 5-8 key fields that best "
+            "represent this document's structure (short snake_case English keys), "
+            "extracting their values from the text. Keep the original wording in the "
+            "values; use null only for a field you chose that is truly absent.\n"
+            "Reply ONLY with a JSON object (doc_type plus the fields).\n"
             f"Invoice schema: {json.dumps(INVOICE_FIELDS, ensure_ascii=False)}\n"
-            f"Listing schema: {json.dumps(LISTING_FIELDS, ensure_ascii=False)}\n"
-            "Reply ONLY with the fields of the matching schema (plus doc_type)."
+            f"Listing schema: {json.dumps(LISTING_FIELDS, ensure_ascii=False)}"
         )
     resp = client.chat.completions.create(
         model=MODEL,

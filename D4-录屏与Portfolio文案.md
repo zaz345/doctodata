@@ -108,13 +108,13 @@ Solo build — architecture, backend, UI, and deployment.
 
 ### 短版本（字数受限时用，约 60 词）
 
+> ⚠️ 下面代码块里是**一整行**，直接全选复制。不要在代码块里手动换行——
+> 硬换行会被一起粘进 Upwork，导致描述里出现「Upload a」这种孤立行。
+> （2026-10-26 更新：加了 generic 兜底后，把撑不住的 "No templates" 换成
+> 经得起客户拿自己的文档一试的说法。）
+
 ```
-DocToData turns invoices and property listings into clean spreadsheets. Upload a
-PDF, an image, or a link; an LLM extracts the fields — totals, dates, parties,
-line items — and you review them side by side against the original file before
-exporting to Excel with one click. Built on Python + FastAPI with an
-OpenAI-compatible LLM layer, so the model is swappable by config. No templates,
-no database, no login.
+DocToData turns documents into clean spreadsheets. Upload a PDF, an image, or a link; an LLM extracts the key fields — totals, dates, parties, line items — and you review them side by side against the original file before exporting to Excel with one click. Invoices and property listings get dedicated schemas; other documents get the fields they actually contain. Built on Python + FastAPI with an OpenAI-compatible LLM layer, so the model is swappable by config. No database, no login.
 
 Live demo: https://doctodata.onrender.com
 ```

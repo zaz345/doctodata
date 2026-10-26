@@ -182,10 +182,12 @@ def main():
         if not wait_view(c, "view-result"):
             print("   [!] 结果页没出现")
         time.sleep(1.5)
-        # PDF 预览用 view=Fit 才显示整页（FitH 在固定高度容器里会放大成局部）
+        # PDF 预览要 view=Fit 才显示整页；只改 hash 不会重载，必须换 URL 强制刷新
         c.eval("(()=>{const f=document.querySelector('#preview iframe');"
-               " if(f&&f.src.includes('FitH')) f.src=f.src.replace('FitH','Fit');})()")
-        time.sleep(3)
+               " if(!f) return; const b=f.src.split('#')[0];"
+               " if(f.src.includes('view=Fit\"')||f.src.includes('view=Fit&')) return;"
+               " f.src = b + '?r=' + Date.now() + '#toolbar=0&view=Fit';})()")
+        time.sleep(4)
         c.call("Emulation.setDeviceMetricsOverride",
                {"width": 1440, "height": 1000, "deviceScaleFactor": 2, "mobile": False})
         time.sleep(1)
