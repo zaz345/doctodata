@@ -300,7 +300,7 @@ function renderResult(doc) {
       </div>`).join("")}
     </div>` : "";
 
-  $("fields").innerHTML = rows + itemRows;
+  $("fields").innerHTML = rows + itemRows + fullTextBox(doc);
 
   $("fields").querySelectorAll("input[data-key]").forEach(inp => {
     inp.oninput = () => {
@@ -308,6 +308,21 @@ function renderResult(doc) {
       else f[inp.dataset.key] = inp.value;
     };
   });
+}
+
+/* 全文可读区：只对有文本层的来源显示（图片/扫描件没有） */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function fullTextBox(doc) {
+  if (!doc.has_text || !doc.text) return "";
+  return `
+    <details class="mt-4 pt-3 border-t border-slate-200">
+      <summary class="text-[12px] font-medium text-slate-500 cursor-pointer select-none hover:text-slate-700">Full document text</summary>
+      <pre class="mt-2 max-h-[320px] overflow-auto text-[12px] leading-relaxed whitespace-pre-wrap text-slate-600 bg-slate-50 rounded-lg p-3">${escapeHtml(doc.text)}</pre>
+      <a href="/text/${doc.doc_id}.md" download class="inline-block mt-2 text-[12px] text-blue-600 hover:underline">Download as .md</a>
+    </details>`;
 }
 
 /* ---------- report ---------- */

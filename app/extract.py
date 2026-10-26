@@ -34,7 +34,10 @@ def pdf_to_text(data: bytes) -> str:
         for page in pdf.pages:
             t = page.extract_text() or ""
             parts.append(t)
-    return "\n".join(parts).strip()
+    text = "\n".join(parts).strip()
+    # pdfplumber 会把字距大的中文拆成「增 值 税」，去掉汉字之间的空白更可读
+    text = re.sub(r"(?<=[\u4e00-\u9fff])[ \t]+(?=[\u4e00-\u9fff])", "", text)
+    return text
 
 
 def html_to_text(html: str) -> str:

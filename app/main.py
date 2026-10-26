@@ -11,7 +11,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
@@ -75,6 +75,7 @@ async def extract(
     t0 = time.time()
     content = b""
     mime = ""
+    full_text = ""  # 文本层来源的全文（PDF/网页），图片为空
     try:
         if file is not None:
             content = await file.read()
@@ -82,22 +83,23 @@ async def extract(
             mime = (file.content_type or "").split(";")[0]
             if kind == "pdf":
                 mime = "application/pdf"
-                text = pdf_to_text(content)
-                if not text:
+                full_text = pdf_to_text(content)
+                if not full_text:
                     raise HTTPException(400, "这份 PDF 没有文字层（可能是扫描件），当前 demo 只支持文字版 PDF 和图片。")
-                result = extract_fields_from_text(text, hint)
+                result = extract_fields_from_text(full_text, hint)
             elif kind == "image":
                 mime = image_mime_for(file.filename, mime)
                 result = extract_fields_from_image(content, mime, hint)
             elif kind == "html":
-                result = extract_fields_from_text(html_to_text(content.decode("utf-8", "ignore")), hint)
+                full_text = html_to_text(content.decode("utf-8", "ignore"))
+                result = extract_fields_from_text(full_text, hint)
             else:
                 raise HTTPException(400, f"不支持的文件类型: {file.content_type} / {file.filename}")
         elif url:
-            text = fetch_url_text(url)
-            if not text:
+            full_text = fetch_url_text(url)
+            if not full_text:
                 raise HTTPException(400, "该网页抓不到正文。")
-            result = extract_fields_from_text(text, hint)
+            result = extract_fields_from_text(full_text, hint)
         else:
             raise HTTPException(400, "请上传文件（file）或提供链接（url）。")
     except HTTPException:
@@ -113,10 +115,31 @@ async def extract(
         "filename": file.filename if file else url,
         "mime": mime,
         "fields": result,
+        "has_text": bool(full_text),
+        "text": full_text,
         "elapsed_sec": round(time.time() - t0, 2),
     }
     RESULTS[doc_id] = {**payload, "content": content, "mime": mime}
     return payload
+
+
+@app.get("/text/{doc_id}.md")
+def get_text_md(doc_id: str):
+    """全文下载（.md）。图片等无文本层的来源返回 404。"""
+    r = RESULTS.get(doc_id)
+    if not r or not r.get("text"):
+        raise HTTPException(404, "Full text not available for this document.")
+    from pathlib import PurePosixPath
+    from urllib.parse import quote
+
+    stem = PurePosixPath(r.get("filename") or doc_id).stem or doc_id
+    out_name = stem + ".md"
+    quoted = quote(out_name)
+    return Response(
+        content=r["text"],
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quoted}"},
+    )
 
 
 @app.get("/results/{doc_id}")
