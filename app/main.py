@@ -133,6 +133,8 @@ def get_text_md(doc_id: str):
     from urllib.parse import quote
 
     stem = PurePosixPath(r.get("filename") or doc_id).stem or doc_id
+    if stem.lower().endswith(".md"):  # 原文件名本身带 .md（如 report.md.pdf）时避免出现 .md.md
+        stem = stem[:-3]
     out_name = stem + ".md"
     quoted = quote(out_name)
     return Response(
